@@ -12,6 +12,10 @@
 
 
 
+**redis是单线程处理的。因为为了避免多线程导致的cpu上下文切换出现的耗时，直接使用单线程操作效率更高。**
+
+
+
 ### 性能
 
 官方测试：读的速度是110000次/s,写的速度是81000次/s 。
@@ -127,13 +131,549 @@ redis-benchmark -h 127.0.0.1 -p 6379 -c 50 -n 10000
 
 
 
-## 配置
+## 基本命令
+
+### 
+
+可以在官网查询命令详解：http://www.redis.cn/commands.html
+
+![命令文档](\images\命令文档.PNG)
+
+
+
+
+
+### 测试联通
+
+```bash
+ping
+```
+
+
+
+### 登陆
+
+```
+redis-cli -h 地址 -p 端口 -a 密码
+```
+
+
+
+### 切换数据库
+
+redis默认有16个数据库，下标从0开始
+
+```
+select index
+```
+
+**示例：**
+
+```shell
+select 1 #切换到数据库 1
+```
+
+
+
+### 查看DB大小
+
+```shell
+dbsize
+```
+
+
+
+### 查看所有的key
+
+```
+keys *
+```
+
+
+
+### 清空当前库
+
+```
+flushdb
+```
+
+
+
+### 清空所有库
+
+```
+flushall
+```
+
+
+
+### 查看key是否存在
+
+```base
+exists key # 1表示存在 0表示不存在
+```
+
+
+
+### 设置key过期时间
+
+```base
+expire key seconds  #单位是秒
+```
+
+
+
+### 获取key过期时间
+
+```base
+ttl key #返回剩余几秒，-2表示已过期
+```
+
+
+
+### 查看key的数据类型
+
+```bash
+type key
+```
+
+
+
+### 删除key
+
+```bash
+del key
+```
 
 
 
 
 
 
+
+## 数据类型
+
+### String
+
+#### 命令
+
+##### 追加key值内容
+
+```base
+append key value #返回最终value值的总长度
+```
+
+
+
+##### 获取value值长度
+
+```base
+strlen key #返回value值长度
+```
+
+
+
+##### 原子加1
+
+```base
+incr key #返回计算完后的值
+```
+
+
+
+##### 原子减1
+
+```base
+decr key #返回计算完后的值
+```
+
+
+
+##### 指定原子值累加
+
+```bash
+incrby key value #value为指定的累加值
+```
+
+
+
+##### 指定原子值递减
+
+```bash
+desrby key value #value为指定的递减值
+```
+
+
+
+##### 分割字符串
+
+```bash
+getrange key start end #下标从0开始 start为开始下标  end为结束下标 -1表示全部
+```
+
+
+
+##### 从指定下标开始覆盖字符串
+
+```bash
+setrange key offset value # offset为指定下标开始 value为覆盖值
+```
+
+
+
+##### 设置值并且设置过期时间
+
+```base
+setex key seconds value # seconds为过期时间，单位是秒
+```
+
+
+
+##### 不存在值设置
+
+```base
+setnx key value #如果不存在值则设置，存在值就不设置
+```
+
+
+
+##### 批量设值
+
+```base
+mset key1 value1 key2 value2 .... 
+```
+
+
+
+##### 批量获取值
+
+```bash
+mget key1 key2 ....
+```
+
+
+
+##### 不存在值批量设置
+
+```bash
+msetnx key1 value1 key2 value2 .... #此命令为原子性操作，其中一个失败则全部失败
+```
+
+
+
+##### 先获取再设置
+
+```bash
+getset key value # 返回的是设置前的值
+```
+
+
+
+## List
+
+
+
+### 命令
+
+大多数list命令都是**l** 开头的
+
+
+
+#### 从头部设置值
+
+```bash
+lpush key value 
+```
+
+
+
+#### 从尾部设置值
+
+```bash
+rpush key value
+```
+
+
+
+#### 获取指定范围值
+
+```bash
+lrange key start end #下标从0开始 start为开始下标  end为结束下标 -1表示全部
+```
+
+
+
+#### 从头部获取并移除值
+
+```bash
+lpop key 
+```
+
+
+
+#### 从尾部获取并移除值
+
+```bash
+rpop key
+```
+
+
+
+#### 获取指定下标的值
+
+```bahs
+lindex key index # index为下标，下标是从0开始
+```
+
+
+
+#### 获取list中的个数
+
+```bash
+llend key
+```
+
+
+
+#### 移除指定list值
+
+```bash
+lrem key count value # count 为需要移除几个和value相等的值,存在多个value重复的值，则会移除count个value值
+```
+
+
+
+#### 截取指定范围的list值
+
+```bash
+ltrim key start end #截取从start到end之间的值为list的最终值
+```
+
+**案例：**
+
+```bash
+127.0.0.1:6379> lrange list 0 -1
+1) "a3"
+2) "a2"
+3) "a1"
+4) "one"
+5) "three"
+127.0.0.1:6379> ltrim list 1 2
+OK
+127.0.0.1:6379> lrange list 0 -1
+1) "a2"
+2) "a1"
+```
+
+
+
+#### 替换指定下标的值
+
+```bash
+lset key index value #下标值不存在则报错
+```
+
+
+
+#### 在值的相对位置插入新值
+
+```bash
+linsert key before|after value newvalue # before表示在value值之前插入newvalue ，after表示在value之后插入newvalue值
+```
+
+
+
+
+
+## Set
+
+set中的值是不能重复的
+
+
+
+### 命令
+
+set的命令大多数都是**s**开头
+
+
+
+#### 批量设置
+
+```bash
+sadd key value1 value2 value3.... #不是原子性，允许部分成功，符合条件的可插入
+```
+
+
+
+#### 获取值
+
+```bash
+smembers key
+```
+
+
+
+#### 判断指定值是否在set中
+
+```bash
+sismember key value # value如果存在set中则返回1 ，不存在则返回0
+```
+
+
+
+#### 获取set中的个数
+
+```bash
+scard key
+```
+
+
+
+#### 移除指定元素
+
+```bash
+srem key value
+```
+
+
+
+#### 随即获取若干个元素
+
+```bash
+srandmember key count #随即获取count个元素值
+```
+
+
+
+#### 随机移除并返回一个元素
+
+```bash
+spop key 
+```
+
+
+
+#### 集合的差集
+
+```bash
+sdiff key1 key2....
+```
+
+
+
+#### 集合的交集
+
+```bash
+sinter key1 key2....
+```
+
+
+
+#### 集合的并集
+
+```bash
+sunion key1 key2....
+```
+
+
+
+
+
+## Hash
+
+hash类型是map值，是由key-value键值对组成的集合
+
+### 命令
+
+hash的命令大多数都是**h**开头
+
+
+
+#### 设置值
+
+```bash
+hset key field value 
+```
+
+
+
+#### 获取值
+
+```bash
+hget key field
+```
+
+
+
+#### 批量设置
+
+```bash
+hmset key field1 value1 field2 value2...  
+```
+
+
+
+#### 批量获取
+
+```bash
+hmget key field1 field2 field3....
+```
+
+
+
+#### 获取全部值
+
+```bash
+hgetall key
+```
+
+**示例：**
+
+```bash
+127.0.0.1:6379> HGETALL map
+1) "key1"
+2) "value1"
+```
+
+
+
+#### 删除指定的元素
+
+```bash
+hdel key field
+```
+
+
+
+#### 获取集合个数
+
+```bash
+hlen key
+```
+
+
+
+#### 判断元素是否存在
+
+```bash
+hexists key field #存在返回1，不存在返回0
+```
+
+
+
+#### 获取集合中的全部field值
+
+```bash
+hkeys key
+```
+
+
+
+#### 获取集合中的value值
+
+```bash
+hvals key
+```
 
 
 
@@ -156,6 +696,10 @@ redis-benchmark -h 127.0.0.1 -p 6379 -c 50 -n 10000
 ### <span id = "hashMap"> 哈希链表</span>
 
 
+
+
+
+# 操作系统
 
 
 
@@ -224,7 +768,7 @@ redis-benchmark -h 127.0.0.1 -p 6379 -c 50 -n 10000
 
 **示例 1:**
 
-```tex
+```
 nums1 = [1, 3]
 nums2 = [2]
 
@@ -235,7 +779,7 @@ nums2 = [2]
 
 **示例 2:**
 
-```tex
+```
 nums1 = [1, 2]
 nums2 = [3, 4]
 
@@ -317,7 +861,7 @@ public static double findMedianSortedArrays(int[] nums1, int[] nums2) {
 
 **示例 1：**
 
-```tex
+```
 输入: "babad"
 输出: "bab"
 注意: "aba" 也是一个有效答案。
@@ -325,7 +869,7 @@ public static double findMedianSortedArrays(int[] nums1, int[] nums2) {
 
 **示例 2：**
 
-```tex
+```
 输入: "cbbd"
 输出: "bb"
 ```
