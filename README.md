@@ -335,6 +335,8 @@ setex key seconds value # seconds为过期时间，单位是秒
 setnx key value #如果不存在值则设置，存在值就不设置
 ```
 
+可用于分布式锁当中
+
 
 
 ##### 批量设值
@@ -487,7 +489,7 @@ linsert key before|after value newvalue # before表示在value值之前插入new
 
 ## Set
 
-set中的值是不能重复的
+无序集合，并且set中的值是不能重复的
 
 
 
@@ -678,6 +680,226 @@ hvals key
 
 
 
+
+## Zset
+
+zset叫做有序集合，而set是无序的，zset怎么做到有序的呢？就是zset的每一个成员都有一个分数与之对应，并且分数是可以重复的。
+
+
+
+### 命令
+
+
+
+
+
+#### 设置值
+
+```bash
+zadd key score value # score表示分数，用来做排序
+```
+
+
+
+#### 获取范围值
+
+````bash
+zrange key start end
+````
+
+
+
+#### 正序获取集合
+
+```bash
+zrangebyscore key start end #可以使用-inf表示负无穷 +inf表示正无穷
+```
+
+**示例1:**
+
+```bash
+127.0.0.1:6379> ZRANGEBYSCORE key -inf +inf
+1) "one"
+2) "kkk"
+3) "tow"
+```
+
+**示例2:**
+
+```bash
+127.0.0.1:6379> ZRANGEBYSCORE key -inf +inf withscores  # 带上withscores后可以显示分数
+1) "one"
+2) "1"
+3) "kkk"
+4) "32"
+5) "tow"
+6) "43"
+```
+
+
+
+#### 移除元素
+
+```bash
+zrem key value 
+```
+
+
+
+#### 查看元素个数
+
+```bash
+zcard key
+```
+
+
+
+#### 倒序获取集合
+
+```bash
+zrevrange key start end 
+```
+
+
+
+
+
+## geospatial
+
+存储经纬度数据
+
+
+
+### 命令
+
+
+
+#### 设置值
+
+```bash
+geoadd key lon lat member 
+```
+
+**示例**
+
+```bash
+127.0.0.1:6379> geoadd city 113.88 22.55 shenzhen 108.93 34.23 xian
+(integer) 2
+```
+
+
+
+#### 获取经纬度
+
+```bash
+geopos key member
+```
+
+**示例**
+
+```bash
+127.0.0.1:6379> GEOPOS city xian
+1) 1) "108.92999857664108"
+   2) "34.230001219268523"
+```
+
+
+
+#### 获取两个空间之间的距离
+
+```bash
+geodist key member1 member2 [m|km..] #最后面设置单位，默认是m
+```
+
+**示例**
+
+```bash
+127.0.0.1:6379> GEODIST city beijing xian km
+"914.4648"
+```
+
+
+
+#### 获取指定地点范围内的集合
+
+```bash
+georadius key lon lat radius [m|km...] #lon和lat为指定地点的经纬度,然后在radius范围内进行查询
+```
+
+**示例**1
+
+```bash
+127.0.0.1:6379> GEORADIUS city 106.51 29.40 1000 km
+1) "xian"
+```
+
+**示例2**
+
+```bash
+127.0.0.1:6379> GEORADIUS city 106.54 29.40 10000 km count 2 # count设置最多返回几个
+1) "xian"
+2) "shenzhen"
+```
+
+**示例3**
+
+```bash
+127.0.0.1:6379> GEORADIUS city 106.54 29.40 10000 km withdist  #withdist在返回位置元素的同时， 将位置元素与中心之间的距离也一并返回,单位一致
+1) 1) "xian"
+   2) "582.7248"
+2) 1) "shenzhen"
+   2) "1057.3114"
+3) 1) "beijing"
+   2) "1473.9461"
+```
+
+**示例4**
+
+```bash
+127.0.0.1:6379> GEORADIUS city 106.54 29.40 10000 km withcoord #withcoord 将位置元素的经度和维度也一并返回
+1) 1) "xian"
+   2) 1) "108.92999857664108"
+      2) "34.230001219268523"
+2) 1) "shenzhen"
+   2) 1) "113.87999922037125"
+      2) "22.55000104759231"
+3) 1) "beijing"
+   2) 1) "116.38999968767166"
+      2) "39.909999566644508"
+```
+
+
+
+
+
+#### 获取指定元素范围内的集合
+
+```bash
+georadiusbymember key radius [m|km...]
+```
+
+**示例1**
+
+```bash
+127.0.0.1:6379> GEORADIUSBYMEMBER city beijing 1000 km withdist #加withdist可以返回对应的距离
+1) 1) "beijing"
+   2) "0.0000"
+2) 1) "xian"
+   2) "914.4648"
+```
+
+
+
+> geo底层其实是set，所以也可以使用set相关的命令来操作geo元素
+
+**示例**
+
+```bash
+127.0.0.1:6379> zrange city 0 -1
+1) "xian"
+2) "shenzhen"
+3) "beijing"
+```
 
 
 
